@@ -55,7 +55,7 @@ object Protocol {
     implicit val UpdateBlogPostMarshaller = {
       Marshaller.delegate[UpdateBlogPost, String](`text/xml`, `application/xml`)(post => {
         """<methodCall>
-      <methodName>wp.getPost</methodName>
+      <methodName>wp.editPost</methodName>
       <params>
         <param>
           <key>blog_id</key>
@@ -76,9 +76,16 @@ object Protocol {
         <param>
           <key>content</key>
           <value>
-            <key>post_content</key>
-            <value>%s</value>
+            <struct>
+              <member>
+                <name>post_content</name>
+                <value>
+                  <string>%s</string>
+                </value>
+              </member>
+            </struct>
           </value>
+        </param>
       </params>
     </methodCall>""".format(post.blogId, post.username, post.password, post.postId, post.content.content)
       })

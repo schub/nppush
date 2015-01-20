@@ -41,7 +41,7 @@ object Main extends App {
 
   // schedule pad update
   val actor = system.actorOf(Props(new GetPadContentActor()))
-  system.scheduler.schedule(5.seconds, config.updatePeriod.seconds, actor, GetPadContent)
+  system.scheduler.schedule(1.seconds, config.updatePeriod.seconds, actor, GetPadContent)
 
   // process user input
   for (ln <- io.Source.stdin.getLines) {
