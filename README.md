@@ -11,5 +11,6 @@ Nppush is a small tool that constantly updates a wordpress post with content loa
 
 start the app with ```java -Djavax.net.ssl.trustStore=<path to your truststore> -Dconfig.file=<path to your config> -jar nppush-assembly-0.0.1.jar```
 
-### create a java truststore
+### java keystore
 
+- import your cert into java keystore ```keytool -importcert -file certificate.cer -keystore keystore.jks -alias "Alias"```
