@@ -1,0 +1,7 @@
+.idea
+.idea_modules
+project/project
+project/target
+target
+
+application.dev.conf
