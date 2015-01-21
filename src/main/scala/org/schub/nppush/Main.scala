@@ -22,6 +22,9 @@ import java.io.File
 
 case class GetPadContentResult(text: String)
 
+/**
+ * Main class. Application entry point.
+ */
 object Main extends App {
 
   // print some user info
@@ -39,16 +42,14 @@ object Main extends App {
   // create config
   val config = Configuration
 
-  // schedule pad update
+  // schedule blog update
   val actor = system.actorOf(Props(new GetPadContentActor()))
   system.scheduler.schedule(1.seconds, config.updatePeriod.seconds, actor, GetPadContent)
 
   // process user input
   for (ln <- io.Source.stdin.getLines) {
-    if (ln.startsWith("x") || ln.startsWith("X")) {
+    if (ln.startsWith("x")) {
       shutdown()
-    } else {
-      println(ln)
     }
   }
 
@@ -60,27 +61,33 @@ object Main extends App {
   }
 }
 
+/**
+ * Configuration object.
+ */
 object Configuration {
 
-  val conf = ConfigFactory.load()
+  lazy val conf = ConfigFactory.load()
 
-  def username = conf.getString("username")
+  lazy val username = conf.getString("username")
 
-  def password = conf.getString("password")
+  lazy val password = conf.getString("password")
 
-  def blogId = conf.getString("blogId")
+  lazy val blogId = conf.getString("blogId")
 
-  def postId = conf.getString("postId")
+  lazy val postId = conf.getString("postId")
 
-  def wpUrl = conf.getString("wpUrl")
+  lazy val wpUrl = conf.getString("wpUrl")
 
-  def sourceUrl = conf.getString("sourceUrl")
+  lazy val sourceUrl = conf.getString("sourceUrl")
 
-  def updatePeriod = conf.getInt("updatePeriod")
+  lazy val updatePeriod = conf.getInt("updatePeriod")
 
-  def backupDir = conf.getString("backupDir")
+  lazy val backupDir = conf.getString("backupDir")
 }
 
+/**
+ * Actor class for getting a wordpress blog post via xml-rpc api.
+ */
 class GetBlogPostActor extends Actor with ActorLogging {
 
   val config = Configuration
@@ -96,12 +103,10 @@ class GetBlogPostActor extends Actor with ActorLogging {
 
         case Success(result) => {
           Console.println("got blog post: " + result.entity.asString.length)
-          self ! PoisonPill
         }
 
         case Failure(error) => {
           log.error(error, "Could not get blog post")
-          self ! PoisonPill
         }
       }
 
@@ -109,6 +114,9 @@ class GetBlogPostActor extends Actor with ActorLogging {
   }
 }
 
+/**
+ * Actor class for updating a wordpress blog post via xml-rpc api.
+ */
 class UpdateBlogPostActor extends Actor with ActorLogging {
 
   val config = Configuration
@@ -133,40 +141,49 @@ class UpdateBlogPostActor extends Actor with ActorLogging {
 
         case Success(result) => {
           Console.println("blog post updated")
-          self ! PoisonPill
         }
 
         case Failure(error) => {
           log.error(error, "error updating blog post")
-          self ! PoisonPill
         }
       }
     }
   }
 }
 
+/**
+ * Actor class for getting a text via http get.
+ */
 class GetPadContentActor extends Actor with ActorLogging {
 
   val config = Configuration
 
   def receive = {
+
     case GetPadContent => {
+
       Console.println("get pad content")
       val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
       val response: Future[HttpResponse] = pipeline(Get(config.sourceUrl))
       response onComplete {
+
         case Success(result) => {
           val pad = result.entity.asString
           context.actorOf(Props(new UpdateBlogPostActor())) ! PadContent(pad)
         }
+
         case Failure(error) => {
           log.error(error, "Could not get pad content")
         }
       }
+
     }
   }
 }
 
+/**
+ * Actor class for writing text to disk.
+ */
 class TextWriteActor extends Actor with ActorLogging {
 
   val config = Configuration
@@ -177,7 +194,7 @@ class TextWriteActor extends Actor with ActorLogging {
 
     case pad: PadContent => {
 
-      // check if backup directory exists
+      // check if backup directory exists and create one if not
       Files.exists(Paths.get(config.backupDir)) match {
         case true => // do nothing
         case false => {
